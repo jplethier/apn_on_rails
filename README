@@ -54,22 +54,28 @@ From Rebecca Nesson (PRX.org):
 This gem extends the original version that Mark Bates adapted.  His gem did the hard
 work of setting up and handling all communication with the Apple push notification servers.
 
+===Upgrade Notes:
+
+If you are upgrading to a new version of APN on Rails you should always run:
+
+  $ ruby script/generate apn_migrations
+
+That way you ensure you have the latest version of the database tables needed.
+
 ==Converting Your Certificate:
 
-Once you have the certificate from Apple for your application, export your key
-and the apple certificate as p12 files. Here is a quick walkthrough on how to do this:
+Once you have the certificate from Apple for your application, export your developer key
+and the apple push notification development certificate as p12 files. Here is a quick walkthrough on how to do this:
 
-1. Click the disclosure arrow next to your certificate in Keychain Access and select the certificate and the key. 
+1. Click the disclosure arrow next to your certificate in Keychain Access and select the certificate and the developer key
 2. Right click and choose `Export 2 items...`. 
 3. Choose the p12 format from the drop down and name it `cert.p12`. 
 
 Now covert the p12 file to a pem file:
 
-  $ openssl pkcs12 -in cert.p12 -out apple_push_notification_production.pem -nodes -clcerts
+  $ openssl pkcs12 -in cert.p12 -out apn_development.pem -nodes -clcerts
 
-If you are using a development certificate, then change the name to apple_push_notification_development.pem instead.
-
-Store the contents of the certificate files on the app model for the app you want to send notifications to. 
+Do the same steps for your production certificate
 
 ==Installing:
 
@@ -113,6 +119,23 @@ Now, to create the tables you need for APN on Rails, run the following task:
 
   $ ruby script/generate apn_migrations
 
+==One App Push Notifications Usage
+
+  $ ./script/console
+  >> app = APN::App.create(:name => "My App", 
+      :apn_dev_cert => "PASTE THE CONTENTS OF THE 'apn_development.pem' file here", 
+      :apn_prod_cert => "PASTE THE CONTENTS OF THE 'apn_production.pem' file here", 
+  >> device = APN::Device.create(:token => "XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX",:app_id => app.id)
+  >> notification = APN::Notification.new
+  >> notification.device = device
+  >> notification.badge = 5
+  >> notification.sound = true
+  >> notification.alert = "foobar"
+  >> notification.custom_properties = {:link => "http://www.prx.org"}
+  >> notification.save
+
+==Multi-App push notifications
+
 APN on Rails uses the Configatron gem, http://github.com/markbates/configatron/tree/master, 
 to configure itself. (With the change to multi-app support, the certifications are stored in the 
 database rather than in the config directory, however, it is still possible to use the default "app" and the certificates
@@ -123,44 +146,25 @@ APN on Rails has the following default configurations that you change as you see
   configatron.apn.passphrase # => ''
   configatron.apn.port # => 2195
   configatron.apn.host # => 'gateway.sandbox.push.apple.com'
-  configatron.apn.cert #=> File.join(RAILS_ROOT, 'config', 'apple_push_notification_development.pem')
+  configatron.apn.cert #=> File.join(RAILS_ROOT, 'config', 'apn_development.pem')
   
   # production (delivery):
   configatron.apn.host # => 'gateway.push.apple.com'
-  configatron.apn.cert #=> File.join(RAILS_ROOT, 'config', 'apple_push_notification_production.pem')
+  configatron.apn.cert #=> File.join(RAILS_ROOT, 'config', 'apn_production.pem')
   
   # development (feedback):
   configatron.apn.feedback.passphrase # => ''
   configatron.apn.feedback.port # => 2196
   configatron.apn.feedback.host # => 'feedback.sandbox.push.apple.com'
-  configatron.apn.feedback.cert #=> File.join(RAILS_ROOT, 'config', 'apple_push_notification_development.pem')
+  configatron.apn.feedback.cert #=> File.join(RAILS_ROOT, 'config', 'apn_development.pem')
   
   # production (feedback):
   configatron.apn.feedback.host # => 'feedback.push.apple.com'
-  configatron.apn.feedback.cert #=> File.join(RAILS_ROOT, 'config', 'apple_push_notification_production.pem')
+  configatron.apn.feedback.cert #=> File.join(RAILS_ROOT, 'config', 'apn_production.pem')
 
 That's it, now you're ready to start creating notifications.
 
-===Upgrade Notes:
-
-If you are upgrading to a new version of APN on Rails you should always run:
-
-  $ ruby script/generate apn_migrations
-
-That way you ensure you have the latest version of the database tables needed.
-
-==Example (assuming you have created an app and stored your keys on it):
-
-  $ ./script/console
-  >> app = APN::App.create(:name => "My App", :apn_dev_cert => "PASTE YOUR DEV CERT HERE", :apn_prod_cert => "PASTE YOUR PROD CERT HERE")
-  >> device = APN::Device.create(:token => "XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX",:app_id => app.id)
-  >> notification = APN::Notification.new
-  >> notification.device = device
-  >> notification.badge = 5
-  >> notification.sound = true
-  >> notification.alert = "foobar"
-  >> notification.custom_properties = {:link => "http://www.prx.org"}
-  >> notification.save
+==Sending Notifications
 
 You can use the following Rake task to deliver your individual notifications:
 
