@@ -8,7 +8,7 @@ class APN::PullNotification < APN::Base
       res = order("created_at DESC").where("app_id = ? AND created_at > ? AND launch_notification = ?", app_id, since_date, false).first
     else
       res = order("created_at DESC").where("app_id = ? AND launch_notification = ?", app_id, true).first
-      res = .order("created_at DESC").where("app_id = ? AND launch_notification = ?", app_id, false) unless res
+      res = order("created_at DESC").where("app_id = ? AND launch_notification = ?", app_id, false) unless res
     end
     res
   end
