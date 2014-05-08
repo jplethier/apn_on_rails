@@ -17,7 +17,7 @@ class APN::PullNotification < APN::Base
     if since_date
       res = order("created_at DESC").where("app_id = ? AND created_at > ? AND launch_notification = ?", app_id, since_date, false).all
     else
-      res = order("created_at DESC").where("app_id = ? AND launch_notification = ?", app_id, false)
+      res = order("created_at DESC").where("app_id = ? AND launch_notification = ?", app_id, false).all
     end
   end
 end
